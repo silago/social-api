@@ -13,18 +13,17 @@ func NewMockAuthProvider() AuthProvider {
 }
 
 func (MockAuthProvider) Friends() ([]string, error) {
-	result:= make ([]string,0)
+	result := make([]string, 0)
 	return result, nil
 }
 
 func (MockAuthProvider) FriendsData() ([]User, error) {
-	result:= make ([]User, 0)
+	result := make([]User, 0)
 	return result, nil
 }
 
 func (MockAuthProvider) Auth() (User, error) {
-	current_time:= fmt.Sprintf("",time.Now())
-	user:= User{Uid:current_time, FirstName:"Mock user",LastName:current_time}
-	return  user, nil
+	current_time := fmt.Sprintf("%d", time.Now().Unix())
+	user := User{Uid: current_time, FirstName: "Mock user", LastName: current_time}
+	return user, nil
 }
-
