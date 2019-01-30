@@ -42,7 +42,9 @@ type VkUser struct {
 }
 
 type VK struct {
-	AccessToken string
+	UserId string
+	AuthKey string
+	ServiceKey string
 	Version     string
 }
 
@@ -80,9 +82,10 @@ func (vk *VK) FriendsData() ([]User, error) {
 }
 
 func (vk *VK) Auth() (User, error) {
+
 	var responseData = UsersGetResponse{}
 	var user = User{}
-	if resp, err := vk.Request("users.get", map[string]string{"fields": "screen_name"}); err != nil {
+	if resp, err := vk.Request("users.get", map[string]string{"user_ids":vk.UserId,"fields": "screen_name"}); err != nil {
 		return user, err
 	} else if err := json.Unmarshal(resp, &responseData.Users); err != nil {
 		log.Printf("%s  >>> %s ", resp, err.Error())
@@ -101,7 +104,7 @@ func (vk *VK) UsersGet(ids []int64) ([]User, error) {
 	var requestParams map[string]string = nil
 	if ids != nil {
 		bytes, _ := json.Marshal(ids)
-		requestParams = map[string]string{"ids": string(bytes)}
+		requestParams = map[string]string{"user_ids": string(bytes)}
 	}
 
 	var responseData = UsersGetResponse{}
@@ -137,7 +140,7 @@ func (vk *VK) Request(method string, params map[string]string) ([]byte, error) {
 		}
 	}
 
-	query.Set("access_token", vk.AccessToken)
+	query.Set("access_token", vk.ServiceKey)
 	query.Set("v", version) 
 	u.RawQuery = query.Encode()
 
@@ -166,8 +169,8 @@ func (vk *VK) Request(method string, params map[string]string) ([]byte, error) {
 	return handler.Response, nil
 }
 
-func NewVkAuthProvider(token string) AuthProvider {
-	return &VK{AccessToken: token} //SessionData{session_key: session_key,session_secret:session_secret_key}}
+func NewVkAuthProvider(user_id string, auth_key string, service_key string) AuthProvider {
+	return &VK{UserId:user_id, AuthKey:auth_key, ServiceKey:service_key} //SessionData{session_key: session_key,session_secret:session_secret_key}}
 }
 
 //func NewVkAuthProvider(app_id string, session_key string, session_secret_key string) AuthProvider {
