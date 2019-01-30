@@ -3,11 +3,11 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
-
 	"github.com/pkg/errors"
 )
 
@@ -52,7 +52,7 @@ func (vk *VK) Friends() ([]string, error) {
 		response []int64
 	}{}
 
-	if resp, err := vk.Request("friends.getAppUser", nil); err != nil {
+	if resp, err := vk.Request("friends.getAppUsers", nil); err != nil {
 		return nil, err
 	} else if err := json.Unmarshal(resp, &responseData); err != nil {
 		return nil, err
@@ -84,7 +84,8 @@ func (vk *VK) Auth() (User, error) {
 	var user = User{}
 	if resp, err := vk.Request("users.get", map[string]string{"fields": "screen_name"}); err != nil {
 		return user, err
-	} else if err := json.Unmarshal(resp, &responseData); err != nil {
+	} else if err := json.Unmarshal(resp, &responseData.Users); err != nil {
+		log.Printf("%s  >>> %s ", resp, err.Error())
 		return user, err
 	} else if len(responseData.Users) == 0 {
 		return user, errors.New("User not found")
@@ -137,9 +138,10 @@ func (vk *VK) Request(method string, params map[string]string) ([]byte, error) {
 	}
 
 	query.Set("access_token", vk.AccessToken)
-	query.Set("v", vk.Version)
+	query.Set("v", version) 
 	u.RawQuery = query.Encode()
 
+	log.Println(u.String())
 	resp, err := http.Get(u.String())
 	if err != nil {
 		return nil, err
