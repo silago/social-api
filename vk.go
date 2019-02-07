@@ -80,7 +80,7 @@ func (vk *VK) getAppAccessToken() (string, error) {
 */
 
 type FriendsGetResponse struct {
-	Repsonse FriendsGetResponseBody `json:"items"`
+	Response FriendsGetResponseBody `json:"response"`
 }
 
 type FriendsGetResponseBody struct {
@@ -97,8 +97,8 @@ func (vk *VK) Friends() ([]string, error) {
 	} else if err := json.Unmarshal(resp, &friendsGetResponse); err != nil {
 		return nil, err
 	} else {
-		result := make([]string, len(friendsGetResponse.Repsonse.Items))
-		for index, val := range friendsGetResponse.Repsonse.Items {
+		result := make([]string, len(friendsGetResponse.Response.Items))
+		for index, val := range friendsGetResponse.Response.Items {
 			result[index] = strconv.FormatInt(val, 10)
 		}
 		return result, nil
@@ -144,7 +144,6 @@ func (vk *VK) Auth() (User, error) {
 	if resp, err := vk.Request("users.get", map[string]string{"user_ids":vk.UserId,"fields": "screen_name"}, ServiceKeyAuth); err != nil {
 		return user, err
 	} else if err := json.Unmarshal(resp, &responseData.Users); err != nil {
-		log.Printf("%s  >>> %s ", resp, err.Error())
 		return user, err
 	} else if len(responseData.Users) == 0 {
 		return user, errors.New("User not found")
