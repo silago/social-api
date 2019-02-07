@@ -3,12 +3,12 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"github.com/pkg/errors"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -44,17 +44,44 @@ type VkUser struct {
 type VK struct {
 	UserId string
 	AuthKey string
-	ServiceKey string
+	ServiceKey string // app secret
+	AccessToken string // users acess token
+	AppId string
 	Version     string
 }
 
-func (vk *VK) Friends() ([]string, error) {
+type AccessTokenResponse struct {
+	 AccessToken string `json:"access_token"`
+}
 
+func (vk *VK) getAppAccessToken() (string, error) {
+	url:=fmt.Sprintf("https://oauth.vk.com/access_token?scope=friends,offline&client_id=%s&client_secret=%s&grant_type=client_credentials",vk.AppId, vk.ServiceKey)
+	//request:=http.Request{URL:url}
+	if response, err:=http.Get(url); err!=nil {
+		return  "" , nil
+	} else {
+		responseSruct:=AccessTokenResponse{}
+		defer response.Body.Close()
+		contents, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return "", err
+		} else {
+			if err:=json.Unmarshal(contents, &responseSruct); err!=nil {
+				return "", err
+			} else {
+				return responseSruct.AccessToken, nil
+			}
+
+		}
+	}
+}
+
+func (vk *VK) Friends() ([]string, error) {
 	responseData := struct {
 		response []int64
 	}{}
 
-	if resp, err := vk.Request("friends.getAppUsers", nil); err != nil {
+	if resp, err := vk.Request("friends.getAppUsers", nil, AccessTokenAuth); err != nil {
 		return nil, err
 	} else if err := json.Unmarshal(resp, &responseData); err != nil {
 		return nil, err
@@ -72,7 +99,7 @@ func (vk *VK) FriendsData() ([]User, error) {
 		response []int64
 	}{}
 
-	if resp, err := vk.Request("friends.getAppUser", nil); err != nil {
+	if resp, err := vk.Request("friends.getAppUser", nil, AccessTokenAuth); err != nil {
 		return nil, err
 	} else if err := json.Unmarshal(resp, &responseData); err != nil {
 		return nil, err
@@ -85,7 +112,7 @@ func (vk *VK) Auth() (User, error) {
 
 	var responseData = UsersGetResponse{}
 	var user = User{}
-	if resp, err := vk.Request("users.get", map[string]string{"user_ids":vk.UserId,"fields": "screen_name"}); err != nil {
+	if resp, err := vk.Request("users.get", map[string]string{"user_ids":vk.UserId,"fields": "screen_name"}, ServiceKeyAuth); err != nil {
 		return user, err
 	} else if err := json.Unmarshal(resp, &responseData.Users); err != nil {
 		log.Printf("%s  >>> %s ", resp, err.Error())
@@ -108,7 +135,7 @@ func (vk *VK) UsersGet(ids []int64) ([]User, error) {
 	}
 
 	var responseData = UsersGetResponse{}
-	if resp, err := vk.Request("users.get", requestParams); err != nil {
+	if resp, err := vk.Request("users.get", requestParams, ServiceKeyAuth); err != nil {
 		return nil, err
 	} else if err := json.Unmarshal(resp, &responseData); err != nil {
 		return nil, err
@@ -127,7 +154,11 @@ func (vk *VK) UsersGet(ids []int64) ([]User, error) {
 	}
 }
 
-func (vk *VK) Request(method string, params map[string]string) ([]byte, error) {
+type AuthMethod int;
+const ServiceKeyAuth AuthMethod = 0
+const AccessTokenAuth AuthMethod = 1
+
+func (vk *VK) Request(method string, params map[string]string, authMethod AuthMethod) ([]byte, error) {
 	u, err := url.Parse(apiURL + method)
 	if err != nil {
 		return nil, err
@@ -139,9 +170,15 @@ func (vk *VK) Request(method string, params map[string]string) ([]byte, error) {
 			query.Set(k, v)
 		}
 	}
-
-	query.Set("access_token", vk.ServiceKey)
-	query.Set("v", version) 
+	switch authMethod {
+	case ServiceKeyAuth:
+		query.Set("access_token", vk.ServiceKey)
+		break
+	case AccessTokenAuth:
+		query.Set("access_token", vk.AccessToken)
+		break
+	}
+	query.Set("v", version)
 	u.RawQuery = query.Encode()
 
 	log.Println(u.String())
@@ -169,8 +206,8 @@ func (vk *VK) Request(method string, params map[string]string) ([]byte, error) {
 	return handler.Response, nil
 }
 
-func NewVkAuthProvider(user_id string, auth_key string, service_key string) AuthProvider {
-	return &VK{UserId:user_id, AuthKey:auth_key, ServiceKey:service_key} //SessionData{session_key: session_key,session_secret:session_secret_key}}
+func NewVkAuthProvider(user_id string, auth_key string, service_key string, access_token string) AuthProvider {
+	return &VK{UserId:user_id, AuthKey:auth_key, ServiceKey:service_key, AccessToken: access_token} //SessionData{session_key: session_key,session_secret:session_secret_key}}
 }
 
 //func NewVkAuthProvider(app_id string, session_key string, session_secret_key string) AuthProvider {
