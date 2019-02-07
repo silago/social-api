@@ -84,7 +84,7 @@ type FriendsGetResponse struct {
 }
 
 type FriendsGetResponseBody struct {
-	Items []int64 `json:"items"`
+	Items []User `json:"items"`
 }
 
 
@@ -99,7 +99,7 @@ func (vk *VK) Friends() ([]string, error) {
 	} else {
 		result := make([]string, len(friendsGetResponse.Response.Items))
 		for index, val := range friendsGetResponse.Response.Items {
-			result[index] = strconv.FormatInt(val, 10)
+			result[index] = val.Uid
 		}
 		return result, nil
 	}
@@ -123,19 +123,19 @@ func (vk *VK) Friends() ([]string, error) {
 //	}
 //}
 
-func (vk *VK) FriendsData() ([]User, error) {
-	responseData := struct {
-		response []int64
-	}{}
 
-	if resp, err := vk.Request("friends.getAppUser", nil, AccessTokenAuth); err != nil {
+func (vk *VK) FriendsData() ([]User, error) {
+	friendsGetResponse:= FriendsGetResponse{}
+
+	if resp, err := vk.Request("friends.get", map[string]string{"user_id":vk.UserId}, ServiceKeyAuth); err != nil {
 		return nil, err
-	} else if err := json.Unmarshal(resp, &responseData); err != nil {
+	} else if err := json.Unmarshal(resp, &friendsGetResponse); err != nil {
 		return nil, err
 	} else {
-		return vk.UsersGet(responseData.response)
+		return friendsGetResponse.Response.Items, nil
 	}
 }
+
 
 func (vk *VK) Auth() (User, error) {
 
