@@ -92,7 +92,7 @@ type FriendsGetResponseBody struct {
 func (vk *VK) Friends() ([]string, error) {
 	friendsGetResponse:= FriendsGetResponse{}
 
-	if resp, err := vk.Request("friends.get", map[string]string{"user_id":vk.UserId}, ServiceKeyAuth); err != nil {
+	if resp, err := vk.Request("friends.get", map[string]string{"user_id":vk.UserId,"fields":"id"}, ServiceKeyAuth); err != nil {
 		return nil, err
 	} else if err := json.Unmarshal(resp, &friendsGetResponse); err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (vk *VK) Friends() ([]string, error) {
 func (vk *VK) FriendsData() ([]User, error) {
 	friendsGetResponse:= FriendsGetResponse{}
 
-	if resp, err := vk.Request("friends.get", map[string]string{"user_id":vk.UserId}, ServiceKeyAuth); err != nil {
+	if resp, err := vk.Request("friends.get", map[string]string{"user_id":vk.UserId,"fields":"id"}, ServiceKeyAuth); err != nil {
 		return nil, err
 	} else if err := json.Unmarshal(resp, &friendsGetResponse); err != nil {
 		return nil, err
