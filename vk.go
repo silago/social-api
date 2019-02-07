@@ -46,7 +46,7 @@ type VK struct {
 	AuthKey string
 	ServiceKey string // app secret
 	AccessToken string // users acess token
-	AppId string
+	gtAppId string
 	Version     string
 }
 
@@ -79,23 +79,49 @@ func (vk *VK) getAppAccessToken() (string, error) {
 }
 */
 
-func (vk *VK) Friends() ([]string, error) {
-	responseData := struct {
-		response []int64
-	}{}
+type FriendsGetResponse struct {
+	Repsonse FriendsGetResponseBody `json:"items"`
+}
 
-	if resp, err := vk.Request("friends.getAppUsers", nil, AccessTokenAuth); err != nil {
+type FriendsGetResponseBody struct {
+	Items []int64 `json:"items"`
+}
+
+
+
+func (vk *VK) Friends() ([]string, error) {
+	friendsGetResponse:= FriendsGetResponse{}
+
+	if resp, err := vk.Request("friends.get", map[string]string{"user_id":vk.UserId}, ServiceKeyAuth); err != nil {
 		return nil, err
-	} else if err := json.Unmarshal(resp, &responseData); err != nil {
+	} else if err := json.Unmarshal(resp, &friendsGetResponse); err != nil {
 		return nil, err
 	} else {
-		result := make([]string, len(responseData.response))
-		for index, val := range responseData.response {
+		result := make([]string, len(friendsGetResponse.Repsonse.Items))
+		for index, val := range friendsGetResponse.Repsonse.Items {
 			result[index] = strconv.FormatInt(val, 10)
 		}
 		return result, nil
 	}
 }
+
+//func (vk *VK) Friends() ([]string, error) {
+//	responseData := struct {
+//		response []int64
+//	}{}
+//
+//	if resp, err := vk.Request("friends.getAppUsers", nil, AccessTokenAuth); err != nil {
+//		return nil, err
+//	} else if err := json.Unmarshal(resp, &responseData); err != nil {
+//		return nil, err
+//	} else {
+//		result := make([]string, len(responseData.response))
+//		for index, val := range responseData.response {
+//			result[index] = strconv.FormatInt(val, 10)
+//		}
+//		return result, nil
+//	}
+//}
 
 func (vk *VK) FriendsData() ([]User, error) {
 	responseData := struct {
