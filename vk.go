@@ -54,6 +54,8 @@ type AccessTokenResponse struct {
 	 AccessToken string `json:"access_token"`
 }
 
+
+/*
 func (vk *VK) getAppAccessToken() (string, error) {
 	url:=fmt.Sprintf("https://oauth.vk.com/access_token?scope=friends,offline&client_id=%s&client_secret=%s&grant_type=client_credentials",vk.AppId, vk.ServiceKey)
 	//request:=http.Request{URL:url}
@@ -75,6 +77,7 @@ func (vk *VK) getAppAccessToken() (string, error) {
 		}
 	}
 }
+*/
 
 func (vk *VK) Friends() ([]string, error) {
 	responseData := struct {
